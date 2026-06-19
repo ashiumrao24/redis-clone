@@ -7,14 +7,22 @@
 #include <thread>
 #include <mutex>
 #include <chrono>
+#include <list>
 
 class Database {
 private:
 
     std::unordered_map<
         std::string,
-        std::string
-    > store;
+        std::pair<
+            std::string,
+            std::list<std::string>::iterator
+        >
+    >store;
+
+    std::list<std::string> lruList;
+
+    size_t capacity;
 
     std::unordered_map<
         std::string,
@@ -27,7 +35,19 @@ private:
         const std::string& key
     );
 
+    void touchKey(
+        const std::string& key
+    );
+
+    void evictLRU();
+
+    void removeKey(
+        const std::string& key
+    );
+
 public:
+
+    Database(size_t cap = 5);
 
     void set(
         const std::string& key,

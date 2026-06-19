@@ -9,7 +9,7 @@ using namespace std;
 
 int main(){
 
-    Database db;
+    Database db(3);
 
     thread ttlThread(
     &Database::cleanupExpiredKeys,
