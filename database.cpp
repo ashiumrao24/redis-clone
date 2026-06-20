@@ -245,7 +245,7 @@ int Database::ttl(
         store.find(key);
     if(it == store.end())
     {
-        return -1;
+        return -2;
     }
     auto expIt =
         expiry.find(key);
@@ -255,7 +255,7 @@ int Database::ttl(
     }
     if(isExpired(key))
     {
-        return -1;
+        return -2;
     }
     return static_cast<int>(
         expIt->second -
