@@ -8,8 +8,8 @@
 using namespace std;
 
 int main(){
-
-    Database db(3);
+    Database db(1000);
+    db.loadFromDisk();
 
     thread ttlThread(
     &Database::cleanupExpiredKeys,
@@ -55,7 +55,7 @@ int main(){
         }
 
         if(tokens[0] == "EXIT"){
-
+            db.saveToDisk();
             cout << "Shutting down...\n";
 
             break;

@@ -70,11 +70,16 @@ public:
 
     void cleanupExpiredKeys();
 
+    void saveToDisk();
+
+    void loadFromDisk();
+
     bool exists(
         const std::string& key
     );
 
     int size();
+
 };
 
 #endif

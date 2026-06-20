@@ -1,4 +1,5 @@
 #include "database.h"
+#include <fstream>
 
 Database::Database(size_t cap)
 {
@@ -173,4 +174,72 @@ void Database::removeKey(
     );
     store.erase(it);
     expiry.erase(key);
+}
+
+void Database::saveToDisk()
+{
+    std::lock_guard<std::mutex>
+        lock(mtx);
+    std::ofstream file(
+        "database.txt"
+    );
+    if(!file.is_open()) return;
+    for(const auto& entry : store)
+    {
+        std::string key = entry.first;
+        std::string value = entry.second.first;
+        time_t expiryTime = 0;
+        auto expIt = expiry.find(key);
+        if(expIt != expiry.end())
+        {
+            expiryTime = expIt->second;
+        }
+
+        file<< key<< "|"<< value<< "|"<< expiryTime<< "\n";
+    }
+    file.close();
+}
+
+void Database::loadFromDisk()
+{
+    std::lock_guard<std::mutex>
+        lock(mtx);
+    std::ifstream file(
+        "database.txt"
+    );
+    if(!file.is_open()) return;
+    std::string line;
+    while(std::getline(file, line))
+    {
+        size_t firstPipe = line.find('|');
+
+        size_t secondPipe = line.find('|',firstPipe + 1);
+
+        if(firstPipe == std::string::npos ||
+           secondPipe == std::string::npos)
+        {
+            continue;
+        }
+
+        std::string key = line.substr(0,firstPipe);
+
+        std::string value =line.substr(firstPipe + 1,secondPipe - firstPipe - 1);
+
+        std::string expiryStr = line.substr(secondPipe + 1);
+
+        time_t expiryTime = std::stoll(expiryStr);
+
+        lruList.push_front(key);
+
+        store[key] =
+        {
+            value,
+            lruList.begin()
+        };
+        if(expiryTime != 0)
+        {
+            expiry[key] =expiryTime;
+        }
+    }
+    file.close();
 }
