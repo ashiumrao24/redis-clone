@@ -140,6 +140,30 @@ void Database::cleanupExpiredKeys()
     }
 }
 
+std::vector<std::string>
+Database::getKeys()
+{
+    std::lock_guard<std::mutex>
+        lock(mtx);
+
+    std::vector<std::string> keys;
+
+    for(const auto& pair : store)
+    {
+        if(
+            !expiry.count(pair.first) ||
+            !isExpired(pair.first)
+        )
+        {
+            keys.push_back(
+                pair.first
+            );
+        }
+    }
+
+    return keys;
+}
+
 void Database::del(
     const std::string& key
 ){
@@ -158,6 +182,19 @@ bool Database::exists(
     return store.find(key)!= store.end();
 }
 
+void Database::flushAll()
+{
+    std::lock_guard<std::mutex>
+        lock(mtx);
+
+    store.clear();
+
+    expiry.clear();
+
+    lruList.clear();
+
+}
+
 int Database::size(){
     std::lock_guard<std::mutex> lock(mtx);
     return store.size();
@@ -174,6 +211,56 @@ void Database::removeKey(
     );
     store.erase(it);
     expiry.erase(key);
+}
+
+bool Database::expire(
+    const std::string& key,
+    int seconds
+)
+{
+    std::lock_guard<std::mutex>
+        lock(mtx);
+
+    auto it =
+        store.find(key);
+
+    if(it == store.end())
+    {
+        return false;
+    }
+
+    expiry[key] =
+        time(nullptr) + seconds;
+
+    return true;
+}
+
+int Database::ttl(
+    const std::string& key
+)
+{
+    std::lock_guard<std::mutex>
+        lock(mtx);
+    auto it =
+        store.find(key);
+    if(it == store.end())
+    {
+        return -1;
+    }
+    auto expIt =
+        expiry.find(key);
+    if(expIt == expiry.end())
+    {
+        return -1;
+    }
+    if(isExpired(key))
+    {
+        return -1;
+    }
+    return static_cast<int>(
+        expIt->second -
+        time(nullptr)
+    );
 }
 
 void Database::saveToDisk()

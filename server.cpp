@@ -205,6 +205,89 @@ void handleClient(
                 response += "\n";
             }
 
+            else if(
+                tokens.size() == 3 &&
+                    tokens[0] == "EXPIRE"
+            )
+            {
+                try
+                {
+                    int seconds =
+                        std::stoi(
+                            tokens[2]
+                        );
+
+                    bool success =
+                        db->expire(
+                            tokens[1],
+                            seconds
+                        );
+
+                    response =
+                        success
+                        ? "1\n"
+                        : "0\n";
+                }
+                catch(...)
+                {
+                    response =
+                        "Invalid TTL\n";
+                }
+            }
+
+            else if(
+                tokens.size() == 2 &&
+                tokens[0] == "TTL"
+            )
+            {
+                response =
+                    std::to_string(
+                        db->ttl(
+                            tokens[1]
+                        )
+                    );
+
+                response += "\n";
+            }
+
+            else if(
+                tokens.size() == 1 &&
+                tokens[0] == "KEYS"
+            )
+            {
+                auto keys =
+                    db->getKeys();
+                if(keys.empty())
+                {
+                    response =
+                        "(empty)\n";
+                }
+                else
+                {
+                    for(
+                        const auto& key :
+                        keys
+                    )
+                    {
+                        response +=
+                            key + "\n";
+                    }
+                }
+            }
+
+            else if(
+                tokens.size() == 1 &&
+                tokens[0] == "FLUSHALL"
+            )
+            {
+                db->flushAll();
+
+                db->saveToDisk();
+
+                response =
+                    "OK\n";
+            }
+
             else
             {
                 response =

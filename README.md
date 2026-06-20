@@ -4,24 +4,27 @@ A Redis-inspired in-memory key-value database built in C++17 featuring TTL expir
 
 ## Features
 
-### Core Database Operations
+### Core Commands
 
 * SET key value
 * GET key
 * DEL key
 * EXISTS key
 * SIZE
+* KEYS
+* FLUSHALL
 
-### TTL Expiration
+### Expiration Commands
 
 * SET key value EX seconds
-* Background cleanup thread
-* Lazy expiration during reads
+* EXPIRE key seconds
+* TTL key
 
 ### LRU Cache Eviction
 
-* O(1) cache updates using hash maps and doubly linked lists
-* Automatic eviction of least recently used keys when capacity is reached
+* O(1) average-time cache operations
+* Least Recently Used eviction policy
+* Implemented using hash tables and doubly linked lists
 
 ### Persistence
 
@@ -32,14 +35,16 @@ A Redis-inspired in-memory key-value database built in C++17 featuring TTL expir
 ### Networking
 
 * TCP server using POSIX sockets
-* Remote client access through netcat/telnet
 * Multiple commands per connection
+* Stream-safe command parsing
+* Remote client access using netcat
 
 ### Concurrency
 
 * Thread-per-client architecture
 * Concurrent client handling
-* Thread-safe access using mutexes
+* Thread-safe database access using mutexes
+* Background expiration cleanup thread
 
 ---
 
@@ -82,13 +87,13 @@ A Redis-inspired in-memory key-value database built in C++17 featuring TTL expir
 
 ## Build Instructions
 
-### Compile Server
+### Compile
 
 ```bash
 g++ server.cpp database.cpp -std=c++17 -pthread -o server
 ```
 
-### Run Server
+### Run
 
 ```bash
 ./server
@@ -102,9 +107,7 @@ localhost:6379
 
 ---
 
-## Connect to Server
-
-Using netcat:
+## Connect To Server
 
 ```bash
 nc localhost 6379
@@ -112,7 +115,7 @@ nc localhost 6379
 
 ---
 
-## Example Usage
+## Example Session
 
 ```text
 SET name Aashi
@@ -127,30 +130,39 @@ EXISTS name
 SIZE
 1
 
-DEL name
-OK
+KEYS
+name
 
-EXISTS name
-0
+EXPIRE name 10
+1
+
+TTL name
+10
+```
+
+After expiration:
+
+```text
+GET name
+NULL
 ```
 
 ---
 
-## TTL Example
+## FLUSHALL Example
 
 ```text
-SET temp 123 EX 5
+SET A 1
+SET B 2
+
+SIZE
+2
+
+FLUSHALL
 OK
 
-GET temp
-123
-```
-
-After 5 seconds:
-
-```text
-GET temp
-NULL
+SIZE
+0
 ```
 
 ---
@@ -170,7 +182,7 @@ redis-clone/
 
 ---
 
-## Key Learnings
+## Concepts Demonstrated
 
 * Hash Tables
 * Doubly Linked Lists
@@ -186,14 +198,11 @@ redis-clone/
 
 ## Future Improvements
 
-* Benchmarking and throughput measurement
-* EXPIRE command
-* TTL command
-* KEYS command
-* FLUSHALL command
-* Append-Only File (AOF) persistence
-* RESP protocol support
-* Thread pool architecture
+* Performance Benchmarking
+* Throughput and Latency Metrics
+* Append-Only File (AOF) Persistence
+* Thread Pool Architecture
+* RESP Protocol Support
 
 ---
 
@@ -205,6 +214,3 @@ redis-clone/
 * Multithreading
 * File I/O
 * Linux/macOS Networking APIs
-
-```
-```

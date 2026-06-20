@@ -8,6 +8,7 @@
 #include <mutex>
 #include <chrono>
 #include <list>
+#include <vector>
 
 class Database {
 private:
@@ -79,6 +80,19 @@ public:
     );
 
     int size();
+
+    std::vector<std::string> getKeys();
+
+    void flushAll();
+
+    bool expire(
+        const std::string& key,
+        int seconds
+    );
+
+    int ttl(
+        const std::string& key
+    );
 
 };
 
