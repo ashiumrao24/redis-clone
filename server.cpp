@@ -29,13 +29,15 @@ void handleClient(
 
     char buffer[1024];
 
+    std::string inputBuffer;
+
     while(true)
     {
         int bytesReceived =
             recv(
                 clientSocket,
                 buffer,
-                sizeof(buffer) - 1,
+                sizeof(buffer),
                 0
             );
 
@@ -44,136 +46,178 @@ void handleClient(
             break;
         }
 
-        buffer[bytesReceived] =
-            '\0';
+        inputBuffer.append(
+            buffer,
+            bytesReceived
+        );
 
-        std::string line =
-            buffer;
-
-        std::stringstream ss(line);
-
-        std::vector<std::string> tokens;
-
-        std::string token;
-
-        while(ss >> token)
+        while(true)
         {
-            tokens.push_back(token);
-        }
+            size_t pos =
+                inputBuffer.find('\n');
 
-        std::string response;
+            if(
+                pos ==
+                std::string::npos
+            )
+            {
+                break;
+            }
 
-        if(tokens.empty())
-        {
-            response =
-                "Invalid command\n";
-        }
+            std::string line =
+                inputBuffer.substr(
+                    0,
+                    pos
+                );
 
-        else if(
-            tokens.size() == 5 &&
-            tokens[0] == "SET" &&
-            tokens[3] == "EX"
-        )
-        {
-            int seconds =
-                std::stoi(tokens[4]);
-
-            db->setWithExpiry(
-                tokens[1],
-                tokens[2],
-                seconds
+            inputBuffer.erase(
+                0,
+                pos + 1
             );
 
-            db->saveToDisk();
+            if(
+                !line.empty() &&
+                line.back() == '\r'
+            )
+            {
+                line.pop_back();
+            }
 
-            response =
-                "OK\n";
-        }
+            std::stringstream ss(line);
 
-        else if(
-            tokens.size() == 3 &&
-            tokens[0] == "SET"
-        )
-        {
-            db->set(
-                tokens[1],
-                tokens[2]
-            );
+            std::vector<std::string> tokens;
 
-            db->saveToDisk();
+            std::string token;
 
-            response =
-                "OK\n";
-        }
+            while(ss >> token)
+            {
+                tokens.push_back(token);
+            }
 
-        else if(
-            tokens.size() == 2 &&
-            tokens[0] == "GET"
-        )
-        {
-            response =
-                db->get(
+            std::string response;
+
+            if(tokens.empty())
+            {
+                response =
+                    "Invalid command\n";
+            }
+
+            else if(
+                tokens.size() == 5 &&
+                tokens[0] == "SET" &&
+                tokens[3] == "EX"
+            )
+            {
+                try
+                {
+                    int seconds =
+                        std::stoi(
+                            tokens[4]
+                        );
+
+                    db->setWithExpiry(
+                        tokens[1],
+                        tokens[2],
+                        seconds
+                    );
+
+                    db->saveToDisk();
+
+                    response =
+                        "OK\n";
+                }
+                catch(...)
+                {
+                    response =
+                        "Invalid TTL\n";
+                }
+            }
+
+            else if(
+                tokens.size() == 3 &&
+                tokens[0] == "SET"
+            )
+            {
+                db->set(
+                    tokens[1],
+                    tokens[2]
+                );
+
+                db->saveToDisk();
+
+                response =
+                    "OK\n";
+            }
+
+            else if(
+                tokens.size() == 2 &&
+                tokens[0] == "GET"
+            )
+            {
+                response =
+                    db->get(
+                        tokens[1]
+                    );
+
+                response += "\n";
+            }
+
+            else if(
+                tokens.size() == 2 &&
+                tokens[0] == "DEL"
+            )
+            {
+                db->del(
                     tokens[1]
                 );
 
-            response += "\n";
-        }
+                db->saveToDisk();
 
-        else if(
-            tokens.size() == 2 &&
-            tokens[0] == "DEL"
-        )
-        {
-            db->del(
-                tokens[1]
+                response =
+                    "OK\n";
+            }
+
+            else if(
+                tokens.size() == 2 &&
+                tokens[0] == "EXISTS"
+            )
+            {
+                response =
+                    std::to_string(
+                        db->exists(
+                            tokens[1]
+                        )
+                    );
+
+                response += "\n";
+            }
+
+            else if(
+                tokens.size() == 1 &&
+                tokens[0] == "SIZE"
+            )
+            {
+                response =
+                    std::to_string(
+                        db->size()
+                    );
+
+                response += "\n";
+            }
+
+            else
+            {
+                response =
+                    "Unknown command\n";
+            }
+
+            send(
+                clientSocket,
+                response.c_str(),
+                response.size(),
+                0
             );
-
-            db->saveToDisk();
-
-            response =
-                "OK\n";
         }
-
-        else if(
-            tokens.size() == 2 &&
-            tokens[0] == "EXISTS"
-        )
-        {
-            response =
-                std::to_string(
-                    db->exists(
-                        tokens[1]
-                    )
-                );
-
-            response += "\n";
-        }
-
-        else if(
-            tokens.size() == 1 &&
-            tokens[0] == "SIZE"
-        )
-        {
-            response =
-                std::to_string(
-                    db->size()
-                );
-
-            response += "\n";
-        }
-
-        else
-        {
-            response =
-                "Unknown command\n";
-        }
-
-        send(
-            clientSocket,
-            response.c_str(),
-            response.size(),
-            0
-        );
     }
 
     close(clientSocket);
