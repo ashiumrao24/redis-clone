@@ -1,4 +1,0 @@
-name|aashi|0
-A|1|0
-city|raipur|0
-B|2|0
