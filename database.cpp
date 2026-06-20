@@ -216,7 +216,7 @@ void Database::loadFromDisk()
         size_t secondPipe = line.find('|',firstPipe + 1);
 
         if(firstPipe == std::string::npos ||
-           secondPipe == std::string::npos)
+            secondPipe == std::string::npos)
         {
             continue;
         }
@@ -228,6 +228,14 @@ void Database::loadFromDisk()
         std::string expiryStr = line.substr(secondPipe + 1);
 
         time_t expiryTime = std::stoll(expiryStr);
+
+        if(
+            expiryTime != 0 &&
+            expiryTime <= time(nullptr)
+        )
+        {
+            continue;
+        }
 
         lruList.push_front(key);
 
