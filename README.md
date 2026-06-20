@@ -1,99 +1,126 @@
 # Redis Clone
 
-A Redis-inspired in-memory key-value database built in C++17 featuring TTL expiration, LRU cache eviction, persistence, TCP networking, and concurrent client handling.
+A Redis-inspired in-memory key-value database built in **C++17** featuring **TCP networking**, **multithreading**, **TTL expiration**, **LRU cache eviction**, **persistence**, and **performance benchmarking**.
+
+---
 
 ## Features
 
 ### Core Commands
 
-* SET key value
-* GET key
-* DEL key
-* EXISTS key
-* SIZE
-* KEYS
-* FLUSHALL
+| Command       | Description              |
+| ------------- | ------------------------ |
+| SET key value | Store a key-value pair   |
+| GET key       | Retrieve a value         |
+| DEL key       | Delete a key             |
+| EXISTS key    | Check if a key exists    |
+| SIZE          | Get total number of keys |
+| KEYS          | List all keys            |
+| FLUSHALL      | Remove all keys          |
 
 ### Expiration Commands
 
-* SET key value EX seconds
-* EXPIRE key seconds
-* TTL key
+| Command                  | Description                   |
+| ------------------------ | ----------------------------- |
+| SET key value EX seconds | Set value with expiry         |
+| EXPIRE key seconds       | Add expiry to an existing key |
+| TTL key                  | View remaining lifetime       |
 
-### LRU Cache Eviction
+### Additional Capabilities
 
-* O(1) average-time cache operations
-* Least Recently Used eviction policy
-* Implemented using hash tables and doubly linked lists
-
-### Persistence
-
-* Snapshot-based persistence to disk
+* O(1) average-time key lookup
+* O(1) LRU cache maintenance
+* Automatic LRU eviction
+* Background TTL cleanup
+* Snapshot persistence
 * Automatic recovery on startup
-* Expired keys skipped during recovery
-
-### Networking
-
-* TCP server using POSIX sockets
-* Multiple commands per connection
-* Stream-safe command parsing
-* Remote client access using netcat
-
-### Concurrency
-
-* Thread-per-client architecture
 * Concurrent client handling
-* Thread-safe database access using mutexes
-* Background expiration cleanup thread
+* Thread-safe operations using mutexes
+
+---
+
+## Performance Benchmark
+
+Benchmarks were executed on the in-memory database layer using **1,000,000 operations**.
+
+| Operation |         Throughput |
+| --------- | -----------------: |
+| SET       |   ~709,940 ops/sec |
+| GET       |   ~700,699 ops/sec |
+| EXISTS    | ~1,118,951 ops/sec |
+
+### Benchmark Configuration
+
+* 1,000,000 operations
+* C++17
+* STL-based implementation
+* O(1) average-time hash table operations
+* LRU maintenance enabled
+* Mutex-protected thread-safe operations
 
 ---
 
 ## Architecture
 
 ```text
-                 TCP Clients
-                      |
-          -------------------------
-          |           |           |
-          v           v           v
+                    TCP Clients
+                         |
+        ----------------------------------
+        |                |               |
+        v                v               v
 
-      Thread 1    Thread 2    Thread 3
-           \         |         /
-            \        |        /
-             \       |       /
+    Client Thread    Client Thread   Client Thread
+           \              |              /
+            \             |             /
+             \            |            /
                 Shared Database
-                       |
-        --------------------------------
-        |              |               |
-        v              v               v
+                        |
+      ---------------------------------------
+      |                  |                 |
+      v                  v                 v
 
-      Store          TTL           LRU Cache
-                       |
-                  Persistence
+  Key-Value Store      TTL            LRU Cache
+                         |
+                    Persistence
 ```
 
 ---
 
-## Data Structures
+## Data Structures Used
 
-| Component       | Data Structure |
-| --------------- | -------------- |
-| Key-Value Store | unordered_map  |
-| LRU Tracking    | list           |
-| Expiry Tracking | unordered_map  |
-| Synchronization | mutex          |
+| Component         | Data Structure |
+| ----------------- | -------------- |
+| Key-Value Storage | unordered_map  |
+| LRU Tracking      | list           |
+| Expiry Tracking   | unordered_map  |
+| Synchronization   | mutex          |
+
+---
+
+## Project Structure
+
+```text
+redis-clone/
+│
+├── database.h
+├── database.cpp
+├── server.cpp
+├── benchmark.cpp
+├── README.md
+└── .gitignore
+```
 
 ---
 
 ## Build Instructions
 
-### Compile
+### Compile Server
 
 ```bash
 g++ server.cpp database.cpp -std=c++17 -pthread -o server
 ```
 
-### Run
+### Run Server
 
 ```bash
 ./server
@@ -109,13 +136,17 @@ localhost:6379
 
 ## Connect To Server
 
+Using netcat:
+
 ```bash
 nc localhost 6379
 ```
 
 ---
 
-## Example Session
+## Example Usage
+
+### Basic Operations
 
 ```text
 SET name Aashi
@@ -132,24 +163,26 @@ SIZE
 
 KEYS
 name
+```
 
-EXPIRE name 10
-1
+### Expiration
 
-TTL name
+```text
+SET temp 123 EX 10
+OK
+
+TTL temp
 10
 ```
 
 After expiration:
 
 ```text
-GET name
+GET temp
 NULL
 ```
 
----
-
-## FLUSHALL Example
+### FLUSHALL
 
 ```text
 SET A 1
@@ -167,21 +200,6 @@ SIZE
 
 ---
 
-## Project Structure
-
-```text
-redis-clone/
-│
-├── database.h
-├── database.cpp
-├── server.cpp
-├── README.md
-├── .gitignore
-└── database.txt
-```
-
----
-
 ## Concepts Demonstrated
 
 * Hash Tables
@@ -193,16 +211,7 @@ redis-clone/
 * Mutex Synchronization
 * Persistence and Recovery
 * Concurrent Server Design
-
----
-
-## Future Improvements
-
 * Performance Benchmarking
-* Throughput and Latency Metrics
-* Append-Only File (AOF) Persistence
-* Thread Pool Architecture
-* RESP Protocol Support
 
 ---
 
@@ -214,3 +223,17 @@ redis-clone/
 * Multithreading
 * File I/O
 * Linux/macOS Networking APIs
+
+---
+
+## Key Learning Outcomes
+
+This project explores the core concepts behind modern in-memory databases such as Redis, including:
+
+* Efficient data structure design
+* Cache eviction strategies
+* Expiration management
+* Concurrent server architecture
+* Persistent storage and recovery
+* Network programming using sockets
+* Performance measurement and optimization
